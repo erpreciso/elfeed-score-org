@@ -1,0 +1,142 @@
+#+TITLE: Scores for elfeed, in org format
+#+COLUMNS: %ITEM %VALUE %TYPE %FEED
+#+STARTUP: overview
+
+* code
+#+begin_src emacs-lisp
+  (defvar org-score-input-file "~/org/projects/elfeed-score-org/scores.org"
+    "Org file with scores.")
+
+  (defvar org-score-output-file "~/org/projects/elfeed-score-org/scores.el"
+    "Output file with scores, format elfeed-score.")
+
+  (defun org-score-parse-input ()
+    (let ((types '("tag" "title" "content" "title-or-content" "feed" "link"))
+          (entries nil))
+      (dolist (type types)
+        (let ((headlines (org-ql-select org-score-input-file '(parent type))))
+          (push (mapcar #'org-score-parse-headline headlines) entries)))
+    entries))
+  
+  
+  (defun org-score-parse-headline (hl)
+    "Return (title value type feed) from headline HL."
+    (let ((value (plist-get (car (cdr hl)) :VALUE))
+          (title (plist-get (car (cdr hl)) :raw-value)))
+      (list title value)))
+
+  (defun org-score-create-lines (infos)
+    (seq-map (lambda (info)
+               (let ((title (car info))
+                     (value (cadr info)))
+                 (format "  (:tags (t .  %s) :value %s :type :attr )"
+                         title value))) infos))
+   
+  (defun org-score-create-buffer-file (lines)
+    "Create temp buffer, insert LINES and write to file."
+    (save-excursion
+      (with-output-to-temp-buffer "*Result*"
+        (goto-char (point-min))
+      (princ ";;; Elfeed score file     -*- lisp -*-\n(\n (\"tags\"\n")
+      (dolist (line lines)
+        (princ (format "%s\n" line)))
+      (princ "  )\n")
+      (pop-to-buffer "*Result*")
+      (when (file-writable-p org-score-output-file)
+         (write-region (point-min)
+                       (point-max)
+                       org-score-output-file)))))
+
+  (defun org-score-run ()
+    (interactive)
+    (let* ((tags (org-ql-select org-score-input-file '(parent "tag")))
+           (infos (mapcar #'org-score-parse-headline tags))
+           (lines (org-score-create-lines infos)))
+      (org-score-create-buffer-file lines)))
+
+  (bind-key "C-c C-j" #'org-score-run 'emacs-lisp-mode-map)
+#+end_src
+* tag
+** science
+:PROPERTIES:
+:VALUE:    +10
+:END:
+** sport
+:PROPERTIES:
+:VALUE:    -500
+:END:
+** emacs
+:PROPERTIES:
+:VALUE:    -100
+:END:
+** opinion
+:PROPERTIES:
+:VALUE:    -50
+:END:
+** tuebingen
+:PROPERTIES:
+:VALUE:    +250
+:END:
+* title
+** Sacha Chua
+:PROPERTIES:
+:VALUE:    +50
+:TYPE:     S
+:FEED:
+:END:
+** Elon
+:PROPERTIES:
+:FEED:
+:VALUE:    -100
+:TYPE:     S
+:END:
+** WSJ
+:PROPERTIES:
+:FEED:
+:VALUE:    +200
+:TYPE:     S
+:END:
+** Football
+:PROPERTIES:
+:FEED:
+:VALUE:    -100
+:TYPE:     s
+:END:
+** Germany
+:PROPERTIES:
+:FEED:
+:VALUE:    +100
+:TYPE:     s
+:END:
+** chiusure
+:PROPERTIES:
+:VALUE:    +100
+:TYPE:     s
+:END:
+** Italy
+:PROPERTIES:
+:VALUE:    +150
+:TYPE:     s
+:END:
+** assorted links
+:PROPERTIES:
+:VALUE:    +150
+:FEED:     Marginal Revolution
+:TYPE:     s
+:END:
+** Peanuts
+:PROPERTIES:
+:VALUE:    -300
+:TYPE:     s
+:END:
+** Le canzoni
+:PROPERTIES:
+:VALUE:    -300
+:TYPE:     s
+:END:
+** macOS
+:PROPERTIES:
+:FEED:     Hacker News
+:VALUE:    -200
+:TYPE:     S
+:END:
