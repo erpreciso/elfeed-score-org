@@ -37,3 +37,36 @@
 :VALUE:    -200
 :STRINGTYPE:     S
 :END:
+** air show
+:PROPERTIES:
+:SECTION:  title-or-content
+:FEED:
+:TITLEVALUE:     +400
+:CONTENTVALUE:   +100
+:STRINGTYPE:     s
+:END:
+** Il Post
+:PROPERTIES:
+:SECTION:  feed
+:TAGS:
+:VALUE:    +400
+:STRINGTYPE:     s
+:ATTR:     t
+:END:
+** VareseNews
+:PROPERTIES:
+:SECTION:  feed
+:TAGS:     sport
+:VALUE:    -600
+:STRINGTYPE:     S
+:ATTR:     t
+:END:
+** https://www.ilpost.it/episodes/
+:PROPERTIES:
+:SECTION:  link
+:TAGS:     sport
+:VALUE:    -600
+:STRINGTYPE:     S
+:ATTR:     t
+:FEEDS:    varesenews
+:END:

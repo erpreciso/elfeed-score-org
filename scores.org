@@ -17,7 +17,15 @@
 
   (defvar org-score-value-property (intern ":VALUE"))
 
+  (defvar org-score-titlevalue-property (intern ":TITLEVALUE"))
+
+  (defvar org-score-contentvalue-property (intern ":CONTENTVALUE"))
+
   (defvar org-score-string-type-property (intern ":STRINGTYPE"))
+
+  (defvar org-score-attr-property (intern ":ATTR"))
+
+  (defvar org-score-tags-property (intern ":TAGS"))
 
   (defvar org-score-text-property (intern ":raw-value"))
 
@@ -26,11 +34,15 @@
 
   (defun org-score-parse-headline (hl)
     "Return plist with all properties from headline HL."
-    (let ((section (plist-get (car (cdr hl)) org-score-rule-type-property))
-          (value (plist-get (car (cdr hl)) org-score-value-property))
-          (string-type (plist-get (car (cdr hl)) org-score-string-type-property))
-          (text (plist-get (car (cdr hl)) org-score-text-property)))
-      (list :section section :text text :value value :string-type string-type)))
+    (list
+     :section (plist-get (car (cdr hl)) org-score-rule-type-property)
+     :text (plist-get (car (cdr hl)) org-score-text-property)
+     :value (plist-get (car (cdr hl)) org-score-value-property)
+     :string-type (plist-get (car (cdr hl)) org-score-string-type-property)
+     :title-value (plist-get (car (cdr hl)) org-score-titlevalue-property)
+     :content-value (plist-get (car (cdr hl)) org-score-contentvalue-property)
+     :attr (plist-get (car (cdr hl)) org-score-attr-property)
+     :tags (plist-get (car (cdr hl)) org-score-tags-property)))
 
   (defun org-score-parse-input (filename)
     (let* ((entries nil)
@@ -53,39 +65,53 @@
   (defun org-score-create-line (input type)
     "Take plist INPUT, create the line of the correct TYPE."
     (pcase type
-      (tag (format "  (:tags (t .  %s) :value %s)"
-                   (plist-get input :text)
-                   (plist-get input :value)))
-      (title (format "  (:title (t .  %s) :value %s)"
-                   (plist-get input :text)
-                   (plist-get input :value)))))     
+      ('tag   (format "  (:tags (t . %-10s) :value %s)"
+                      (plist-get input :text)
+                      (plist-get input :value)))
+      ('title (format "  (:text %-20s :value %s :type %s)"
+                      (plist-get input :text)
+                      (plist-get input :value)
+                      (plist-get input :string-type)))
+      ('feed (format "  (:text %-20s :value %s :type %s :attr %s%s)"
+                      (plist-get input :text)
+                      (plist-get input :value)
+                      (plist-get input :string-type)
+                      (plist-get input :attr)
+                      (if-let* ((tags (plist-get input :tags))
+                                (tags-p (not (string= tags ""))))
+                          (format " :tags (t . %s)" tags) "")))
+      ('title-or-content
+       (format "  (:text %-20s :title-value %s :content-value %s :type %s)"
+               (plist-get input :text)
+               (plist-get input :title-value)
+               (plist-get input :content-value)
+               (plist-get input :string-type)))))
 
+  (let ((a 'hh))
+    (if-let (b (if (equal a 'hh) 'joy 'sad)) b nil))
+  
   (defun org-score-create-lines (infos type)
     "Create lines (strings) for score file section of TYPE.
   You can pass all INFOS, and they will be filtered for TYPE."
     (let ((lines nil)
           (type-infos (org-score-filter-infos infos type)))
-      (push (format "(\n (\"%s\"" (symbol-name type)) lines)
+      (push (format " (\"%s\"" (symbol-name type)) lines)
       (dolist (info type-infos)
         (push (org-score-create-line info type) lines))
-      (push "\n" lines) ; empty line
+      (push "  )" lines)
       (reverse lines)))  
    
-  (defun org-score-create-buffer-file ()
-    "Create temp buffer, insert LINES and write to file."
-    (let ((infos (org-score-parse-input org-score-input-file-TEST)))
+  (defun org-score-create-buffer-file (filename)
+    "Create temp buffer from FILENAME and write to file."
+    (let ((infos (org-score-parse-input filename))
+          (types '(tag title title-or-content feed)))
       (save-excursion
         (with-output-to-temp-buffer "*Result*"
           (goto-char (point-min))
           (princ ";;; Elfeed score file     -*- lisp -*-\n")
-          (let ((tag-lines (org-score-create-lines infos 'tag)))
-            (dolist (line tag-lines)
-              (princ (format "%s\n" line)))
-            (princ "  )\n"))
-          (let ((title-lines (org-score-create-lines infos 'title)))
-            (dolist (line title-lines)
-              (princ (format "%s\n" line)))
-            (princ "  )\n"))
+          (dolist (type types)
+            (dolist (line (org-score-create-lines infos type))
+              (princ (format "%s\n" line))))
           (pop-to-buffer "*Result*")
           (when (file-writable-p org-score-output-file)
             (write-region (point-min)
@@ -94,7 +120,7 @@
 
   (defun org-score-run ()
     (interactive)
-    (org-score-create-buffer-file))
+    (org-score-create-buffer-file org-score-input-file-TEST))
 
   (bind-key "C-c C-j" #'org-score-run 'emacs-lisp-mode-map)
 
