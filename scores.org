@@ -1,5 +1,5 @@
 #+TITLE: Scores for elfeed, in org format
-#+COLUMNS: %ITEM %VALUE %TYPE %FEED
+#+COLUMNS: %ITEM %SECTION %VALUE %TYPE %FEED
 #+STARTUP: overview
 
 * code
@@ -7,85 +7,147 @@
   (defvar org-score-input-file "~/org/projects/elfeed-score-org/scores.org"
     "Org file with scores.")
 
+  (defvar org-score-input-file-TEST
+    "~/org/projects/elfeed-score-org/test-scores.org"
+    "Org file with scores.")
+
+  (defvar org-score-rule-type-property (intern ":SECTION")
+    "Name of the property that identifies the type of rule.
+  Each type of rule has its own sublist in the score file.")
+
+  (defvar org-score-value-property (intern ":VALUE"))
+
+  (defvar org-score-string-type-property (intern ":STRINGTYPE"))
+
+  (defvar org-score-text-property (intern ":raw-value"))
+
   (defvar org-score-output-file "~/org/projects/elfeed-score-org/scores.el"
     "Output file with scores, format elfeed-score.")
 
-  (defun org-score-parse-input ()
-    (let ((types '("tag" "title" "content" "title-or-content" "feed" "link"))
-          (entries nil))
-      (dolist (type types)
-        (let ((headlines (org-ql-select org-score-input-file '(parent type))))
-          (push (mapcar #'org-score-parse-headline headlines) entries)))
-    entries))
-  
-  
   (defun org-score-parse-headline (hl)
-    "Return (title value type feed) from headline HL."
-    (let ((value (plist-get (car (cdr hl)) :VALUE))
-          (title (plist-get (car (cdr hl)) :raw-value)))
-      (list title value)))
+    "Return plist with all properties from headline HL."
+    (let ((section (plist-get (car (cdr hl)) org-score-rule-type-property))
+          (value (plist-get (car (cdr hl)) org-score-value-property))
+          (string-type (plist-get (car (cdr hl)) org-score-string-type-property))
+          (text (plist-get (car (cdr hl)) org-score-text-property)))
+      (list :section section :text text :value value :string-type string-type)))
 
-  (defun org-score-create-lines (infos)
-    (seq-map (lambda (info)
-               (let ((title (car info))
-                     (value (cadr info)))
-                 (format "  (:tags (t .  %s) :value %s :type :attr )"
-                         title value))) infos))
+  (defun org-score-parse-input (filename)
+    (let* ((entries nil)
+           (filter
+            (lambda (h)
+              (if (org-element-property org-score-rule-type-property h) h nil)))
+           (ast (with-temp-buffer
+                  (insert-file-contents filename)
+                  (org-element-parse-buffer)))
+           (headlines (org-element-map ast 'headline filter)))
+      (seq-map (lambda (hl) (push (org-score-parse-headline hl) entries))
+               headlines)
+      entries))
+
+  (defun org-score-filter-infos (infos type)
+    "Given TYPE, return infos of that type."
+    (seq-filter
+     (lambda (info) (equal (symbol-name type) (plist-get info :section))) infos))
+
+  (defun org-score-create-line (input type)
+    "Take plist INPUT, create the line of the correct TYPE."
+    (pcase type
+      (tag (format "  (:tags (t .  %s) :value %s)"
+                   (plist-get input :text)
+                   (plist-get input :value)))
+      (title (format "  (:title (t .  %s) :value %s)"
+                   (plist-get input :text)
+                   (plist-get input :value)))))     
+
+  (defun org-score-create-lines (infos type)
+    "Create lines (strings) for score file section of TYPE.
+  You can pass all INFOS, and they will be filtered for TYPE."
+    (let ((lines nil)
+          (type-infos (org-score-filter-infos infos type)))
+      (push (format "(\n (\"%s\"" (symbol-name type)) lines)
+      (dolist (info type-infos)
+        (push (org-score-create-line info type) lines))
+      (push "\n" lines) ; empty line
+      (reverse lines)))  
    
-  (defun org-score-create-buffer-file (lines)
+  (defun org-score-create-buffer-file ()
     "Create temp buffer, insert LINES and write to file."
-    (save-excursion
-      (with-output-to-temp-buffer "*Result*"
-        (goto-char (point-min))
-      (princ ";;; Elfeed score file     -*- lisp -*-\n(\n (\"tags\"\n")
-      (dolist (line lines)
-        (princ (format "%s\n" line)))
-      (princ "  )\n")
-      (pop-to-buffer "*Result*")
-      (when (file-writable-p org-score-output-file)
-         (write-region (point-min)
-                       (point-max)
-                       org-score-output-file)))))
+    (let ((infos (org-score-parse-input org-score-input-file-TEST)))
+      (save-excursion
+        (with-output-to-temp-buffer "*Result*"
+          (goto-char (point-min))
+          (princ ";;; Elfeed score file     -*- lisp -*-\n")
+          (let ((tag-lines (org-score-create-lines infos 'tag)))
+            (dolist (line tag-lines)
+              (princ (format "%s\n" line)))
+            (princ "  )\n"))
+          (let ((title-lines (org-score-create-lines infos 'title)))
+            (dolist (line title-lines)
+              (princ (format "%s\n" line)))
+            (princ "  )\n"))
+          (pop-to-buffer "*Result*")
+          (when (file-writable-p org-score-output-file)
+            (write-region (point-min)
+                          (point-max)
+                          org-score-output-file))))))
 
   (defun org-score-run ()
     (interactive)
-    (let* ((tags (org-ql-select org-score-input-file '(parent "tag")))
-           (infos (mapcar #'org-score-parse-headline tags))
-           (lines (org-score-create-lines infos)))
-      (org-score-create-buffer-file lines)))
+    (org-score-create-buffer-file))
 
   (bind-key "C-c C-j" #'org-score-run 'emacs-lisp-mode-map)
+
+  (ert-deftest tags ()
+    (should
+     (equal
+      (org-score-create-line
+       '(:section "title" :text "macOS" :value "-200" :string-type "S") 'tag)
+      "  (:tags (t .  macOS) :value -200)")))
+
+  (ert-deftest parse-input-file ()
+    (should (equal
+             (take 3 (org-score-parse-input org-score-input-file-TEST))
+             ((:section "title" :text "macOS" :value "-200" :string-type "S")
+              (:section "title" :text "Germany" :value "+100" :string-type "s")
+              (:section "title" :text "WSJ" :value "+200" :string-type "S")))))
 #+end_src
-* tag
+* scores
 ** science
 :PROPERTIES:
 :VALUE:    +10
+:SECTION:  tag
 :END:
 ** sport
 :PROPERTIES:
+:SECTION:  tag
 :VALUE:    -500
 :END:
 ** emacs
 :PROPERTIES:
+:SECTION:  tag
 :VALUE:    -100
 :END:
 ** opinion
 :PROPERTIES:
+:SECTION:  tag
 :VALUE:    -50
 :END:
 ** tuebingen
 :PROPERTIES:
+:SECTION:  tag
 :VALUE:    +250
 :END:
-* title
 ** Sacha Chua
 :PROPERTIES:
 :VALUE:    +50
+:SECTION:  title
 :TYPE:     S
 :FEED:
 :END:
 ** Elon
 :PROPERTIES:
+:SECTION:  title
 :FEED:
 :VALUE:    -100
 :TYPE:     S
@@ -93,49 +155,58 @@
 ** WSJ
 :PROPERTIES:
 :FEED:
+:SECTION:  title
 :VALUE:    +200
 :TYPE:     S
 :END:
 ** Football
 :PROPERTIES:
 :FEED:
+:SECTION:  title
 :VALUE:    -100
 :TYPE:     s
 :END:
 ** Germany
 :PROPERTIES:
 :FEED:
+:SECTION:  title
 :VALUE:    +100
 :TYPE:     s
 :END:
 ** chiusure
 :PROPERTIES:
+:SECTION:  title
 :VALUE:    +100
 :TYPE:     s
 :END:
 ** Italy
 :PROPERTIES:
+:SECTION:  title
 :VALUE:    +150
 :TYPE:     s
 :END:
 ** assorted links
 :PROPERTIES:
 :VALUE:    +150
+:SECTION:  title
 :FEED:     Marginal Revolution
 :TYPE:     s
 :END:
 ** Peanuts
 :PROPERTIES:
+:SECTION:  title
 :VALUE:    -300
 :TYPE:     s
 :END:
 ** Le canzoni
 :PROPERTIES:
+:SECTION:  title
 :VALUE:    -300
 :TYPE:     s
 :END:
 ** macOS
 :PROPERTIES:
+:SECTION:  title
 :FEED:     Hacker News
 :VALUE:    -200
 :TYPE:     S

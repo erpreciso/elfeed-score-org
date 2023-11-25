@@ -1,0 +1,39 @@
+#+COLUMNS: %ITEM %SECTION %VALUE %STRINGTYPE %FEED
+
+* scores
+** science
+:PROPERTIES:
+:VALUE:    +10
+:SECTION:  tag
+:END:
+** sport
+:PROPERTIES:
+:SECTION:  tag
+:VALUE:    -500
+:END:
+** emacs
+:PROPERTIES:
+:SECTION:  tag
+:VALUE:    -100
+:END:
+** WSJ
+:PROPERTIES:
+:FEED:
+:SECTION:  title
+:VALUE:    +200
+:STRINGTYPE:     S
+:END:
+** Germany
+:PROPERTIES:
+:FEED:
+:SECTION:  title
+:VALUE:    +100
+:STRINGTYPE:     s
+:END:
+** macOS
+:PROPERTIES:
+:SECTION:  title
+:FEED:     Hacker News
+:VALUE:    -200
+:STRINGTYPE:     S
+:END:
