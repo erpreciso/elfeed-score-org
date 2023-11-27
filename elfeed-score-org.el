@@ -4,7 +4,8 @@
 
 ;;; GET DATA FROM FILE
 
-(defvar elfeed-score-org-input-file (expand-file-name "~/org/projects/elfeed-score-org/scores.org")
+(defvar elfeed-score-org-input-file
+  (expand-file-name "~/org/projects/elfeed-score-org/scores.org")
   "Org file with scores.")
 
 (defvar elfeed-score-org-input-file-TEST
@@ -34,7 +35,8 @@ Each type of rule has its own sublist in the score file.")
 
 (defun elfeed-score-org-parse-headline (hl)
   "Return `entry' plist with all properties from org headline HL."
-  (let* ((section (plist-get (car (cdr hl)) elfeed-score-org-rule-type-property))
+  (let* ((section (plist-get (car (cdr hl))
+                             elfeed-score-org-rule-type-property))
          (expected-vars (elfeed-score-org-variables-by-section section)))
     (flatten-list
      (apply
@@ -46,7 +48,8 @@ Each type of rule has its own sublist in the score file.")
             (list var (plist-get (car (cdr hl))
                                  elfeed-score-org-rule-type-property)))
            (:text
-            (list var (plist-get (car (cdr hl)) elfeed-score-org-text-property)))
+            (list var (plist-get (car (cdr hl))
+                                 elfeed-score-org-text-property)))
            (:value
             (list var (plist-get (car (cdr hl))
                                  elfeed-score-org-value-property)))
@@ -61,13 +64,13 @@ Each type of rule has its own sublist in the score file.")
                                  elfeed-score-org-contentvalue-property)))
            (:attr
             (list var (if-let (val (plist-get (car (cdr hl))
-                                 elfeed-score-org-attr-property)) val "t")))
+                                              elfeed-score-org-attr-property)) val "t")))
            (:feeds
             (list var (plist-get (car (cdr hl))
                                  elfeed-score-org-feeds-property)))
            (:tags
             (list var (if-let (val (plist-get (car (cdr hl))
-                                 elfeed-score-org-tags-property)) val "")))))
+                                              elfeed-score-org-tags-property)) val "")))))
        expected-vars)))))
 
 (defun elfeed-score-org-parse-input (filename)
@@ -76,7 +79,8 @@ Entry is a plist (:section section :text text etc.)"
   (let* ((entries nil)
          (filter
           (lambda (h)
-            (if (org-element-property elfeed-score-org-rule-type-property h) h nil)))
+            (if (org-element-property
+                 elfeed-score-org-rule-type-property h) h nil)))
          (ast (with-temp-buffer
                 (insert-file-contents filename)
                 (org-element-parse-buffer)))
@@ -129,19 +133,19 @@ the flag."
         (val (elfeed-score-org-get-value entry var)))
     (if (and (string= section "tag") (equal var :text))
         (format ":tags (t . %s) " val)
-    (pcase var
-      (:section "")
-      ((or :text :link)
-       (format "%s \"%s\" " var val))
-      (:tags
-       (if (not (or (not val) (equal val "")))
-           (format ":tags (t . %s) " val) ""))
-      (:feeds
-       (if (not (or (not val) (equal val "")))
-           (format " :feeds (t . ((t s \"%s\")))" val) ""))
-      ((or :value :title-value :content-value :attr :type)
-       (format "%s %s " var val))
-      ))))
+      (pcase var
+        (:section "")
+        ((or :text :link)
+         (format "%s \"%s\" " var val))
+        (:tags
+         (if (not (or (not val) (equal val "")))
+             (format ":tags (t . %s) " val) ""))
+        (:feeds
+         (if (not (or (not val) (equal val "")))
+             (format " :feeds (t . ((t s \"%s\")))" val) ""))
+        ((or :value :title-value :content-value :attr :type)
+         (format "%s %s " var val))
+        ))))
 
 (defun elfeed-score-org-create-line (entry section)
   "Given ENTRY, return formatted string LINE."
@@ -152,7 +156,8 @@ the flag."
             (apply #'concat
                    (seq-map
                     (lambda (var)
-                      (format "%s" (elfeed-score-org-format-variable-value entry var)))
+                      (format "%s" (elfeed-score-org-format-variable-value
+                                    entry var)))
                     variables))
             ")")))
 
@@ -170,7 +175,8 @@ You can pass all INFOS, and they will be filtered for SECTION."
 (defun elfeed-score-org-create-buffer-file (filename)
   "Create temp buffer from FILENAME and write to file."
   (let ((entries (elfeed-score-org-parse-input filename))
-        (sections (elfeed-score-org-plist-keys elfeed-score-org-sections-variables)))
+        (sections (elfeed-score-org-plist-keys
+                   elfeed-score-org-sections-variables)))
     (save-excursion
       (with-output-to-temp-buffer "*Result*"
         (goto-char (point-min))
@@ -182,7 +188,8 @@ You can pass all INFOS, and they will be filtered for SECTION."
         (princ ")")
         (pop-to-buffer "*Result*")
         (when (file-writable-p elfeed-score-org-output-file)
-          (let ((backup-name (concat (make-backup-file-name elfeed-score-org-output-file)
+          (let ((backup-name (concat (make-backup-file-name
+                                      elfeed-score-org-output-file)
                                      (format-time-string "%Y%m%dT%H%M%S"))))
             (copy-file elfeed-score-org-output-file backup-name))
           (write-region (point-min)
@@ -209,7 +216,7 @@ You can pass all INFOS, and they will be filtered for SECTION."
           ":SECTION: " (symbol-name type) "\n"
           (if (equal type 'title-or-content)
               (concat ":CONTENTVALUE: %^{content val}\n"
-            ":TITLEVALUE: %^{title val}\n")
+                      ":TITLEVALUE: %^{title val}\n")
             ":VALUE: %^{value}\n")
           ":STRINGTYPE: %^{string type: `s'= insensitive, `S'= sensitive|s}\n"
           ":ENTERED:  %U\n"
@@ -220,27 +227,28 @@ You can pass all INFOS, and they will be filtered for SECTION."
 and setup org-capture templates for score entry."
   (add-hook 'after-save-hook 'elfeed-score-org-hook)
   (let ((group-template '("s" "Score file entry"))
-        (entry-template '(("sf" "Score feed" entry
-                           (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
-                           (function (lambda ()
-                                       (elfeed-score-org-capture-template 'feed))))
-                          ("st" "Score title" entry
-                           (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
-                           (function (lambda ()
-                                       (elfeed-score-org-capture-template 'title))))
-                          ("sc" "Score title-or-content" entry
-                           (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
-                           (function (lambda ()
-                                       (elfeed-score-org-capture-template
-                                        'title-or-content))))
-                          ("sl" "Score link" entry
-                           (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
-                           (function (lambda ()
-                                       (elfeed-score-org-capture-template 'link))))
-                          ("st" "Score tag" entry
-                           (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
-                           (function (lambda ()
-                                       (elfeed-score-org-capture-template 'tag)))))))
+        (entry-template
+         '(("sf" "Score feed" entry
+            (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
+            (function (lambda ()
+                        (elfeed-score-org-capture-template 'feed))))
+           ("st" "Score title" entry
+            (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
+            (function (lambda ()
+                        (elfeed-score-org-capture-template 'title))))
+           ("sc" "Score title-or-content" entry
+            (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
+            (function (lambda ()
+                        (elfeed-score-org-capture-template
+                         'title-or-content))))
+           ("sl" "Score link" entry
+            (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
+            (function (lambda ()
+                        (elfeed-score-org-capture-template 'link))))
+           ("st" "Score tag" entry
+            (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
+            (function (lambda ()
+                        (elfeed-score-org-capture-template 'tag)))))))
     (if (not (member group-template org-capture-templates))
         (setq org-capture-templates
               (append org-capture-templates (list group-template))))
@@ -257,28 +265,23 @@ and setup org-capture templates for score entry."
   (should
    (equal
     (elfeed-score-org-create-line
-     '(:section "title" :text "macOS" :value "-200" :type "S") 'tag)
-    "  (:tags (t .  macOS) :value -200)")))
+     '(:section "title" :text "macOS" :value "-200" :type "S" :feeds "") 'tag)
+    "  (:text \"macOS\" :value -200 :type S )")))
 
 (ert-deftest parse-input-file ()
   (should (equal
-           (take 3 (elfeed-score-org-parse-input elfeed-score-org-input-file-TEST))
-           ((:section "title" :text "macOS" :value "-200" :type "S")
-            (:section "title" :text "Germany" :value "+100" :type "s")
-            (:section "title" :text "WSJ" :value "+200" :type "S"))))
-  (should (equal
            (elfeed-score-org-parse-input elfeed-score-org-input-file-TEST)
-           '((:text "air show" :title-value "+400" :content-value "+100" :type "s")
-             (:section "feed" :text "Il Post" :value "+400" :type "s" :tags "")
-             (:text "https://www.ilpost.it/episodes/" :value "-600" :type "S" :feeds)
-             (:text "offerte-lavoro" :value "+400" :type "s" :feeds "varesenews")
-             (:text "science" :value "+10")
-             (:text "sport" :value "-500")
-             (:text "emacs" :value "-100")
-             (:section "title" :text "WSJ" :value "+200" :type "S")
-             (:section "title" :text "Germany" :value "+100" :type "s")
-             (:section "title" :text "macOS" :value "-200" :type "S")
-             (:section "feed" :text "VareseNews" :value "-600" :type "S" :tags "sport")))))
+           '((:section "title-or-content" :text "air show" :title-value "+400" :content-value "+100" :type "s")
+            (:section "feed" :text "Il Post" :value "+400" :type "s" :tags "" :attr "t")
+            (:section "link" :text "https://www.ilpost.it/episodes/" :value "-600" :type "S" :feeds)
+            (:section "link" :text "offerte-lavoro" :value "+400" :type "s" :feeds "varesenews")
+            (:section "tag" :text "science" :value "+10")
+            (:section "tag" :text "sport" :value "-500")
+            (:section "tag" :text "emacs" :value "-100")
+            (:section "title" :text "WSJ" :value "+200" :type "S" :feeds "")
+            (:section "title" :text "Germany" :value "+100" :type "s" :feeds "Il Post")
+            (:section "title" :text "macOS" :value "-200" :type "S" :feeds "Hacker News")
+            (:section "feed" :text "VareseNews" :value "-600" :type "S" :tags "" :attr "t")))))
 
 (ert-deftest entry-complete ()
   (should-not (elfeed-score-org-check-completeness
