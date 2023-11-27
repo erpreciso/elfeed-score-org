@@ -1,239 +1,578 @@
 #+TITLE: Scores for elfeed, in org format
-#+COLUMNS: %ITEM %SECTION %VALUE %TYPE %FEED
 #+STARTUP: overview
+#+COLUMNS: %ITEM %SECTION %VALUE %TITLEVALUE %CONTENTVALUE %STRINGTYPE %ATTR %FEED
 
-* code
-#+begin_src emacs-lisp
-  (defvar org-score-input-file "~/org/projects/elfeed-score-org/scores.org"
-    "Org file with scores.")
-
-  (defvar org-score-input-file-TEST
-    "~/org/projects/elfeed-score-org/test-scores.org"
-    "Org file with scores.")
-
-  (defvar org-score-rule-type-property (intern ":SECTION")
-    "Name of the property that identifies the type of rule.
-  Each type of rule has its own sublist in the score file.")
-
-  (defvar org-score-value-property (intern ":VALUE"))
-
-  (defvar org-score-titlevalue-property (intern ":TITLEVALUE"))
-
-  (defvar org-score-contentvalue-property (intern ":CONTENTVALUE"))
-
-  (defvar org-score-string-type-property (intern ":STRINGTYPE"))
-
-  (defvar org-score-attr-property (intern ":ATTR"))
-
-  (defvar org-score-tags-property (intern ":TAGS"))
-
-  (defvar org-score-text-property (intern ":raw-value"))
-
-  (defvar org-score-output-file "~/org/projects/elfeed-score-org/scores.el"
-    "Output file with scores, format elfeed-score.")
-
-  (defun org-score-parse-headline (hl)
-    "Return plist with all properties from headline HL."
-    (list
-     :section (plist-get (car (cdr hl)) org-score-rule-type-property)
-     :text (plist-get (car (cdr hl)) org-score-text-property)
-     :value (plist-get (car (cdr hl)) org-score-value-property)
-     :string-type (plist-get (car (cdr hl)) org-score-string-type-property)
-     :title-value (plist-get (car (cdr hl)) org-score-titlevalue-property)
-     :content-value (plist-get (car (cdr hl)) org-score-contentvalue-property)
-     :attr (plist-get (car (cdr hl)) org-score-attr-property)
-     :tags (plist-get (car (cdr hl)) org-score-tags-property)))
-
-  (defun org-score-parse-input (filename)
-    (let* ((entries nil)
-           (filter
-            (lambda (h)
-              (if (org-element-property org-score-rule-type-property h) h nil)))
-           (ast (with-temp-buffer
-                  (insert-file-contents filename)
-                  (org-element-parse-buffer)))
-           (headlines (org-element-map ast 'headline filter)))
-      (seq-map (lambda (hl) (push (org-score-parse-headline hl) entries))
-               headlines)
-      entries))
-
-  (defun org-score-filter-infos (infos type)
-    "Given TYPE, return infos of that type."
-    (seq-filter
-     (lambda (info) (equal (symbol-name type) (plist-get info :section))) infos))
-
-  (defun org-score-create-line (input type)
-    "Take plist INPUT, create the line of the correct TYPE."
-    (pcase type
-      ('tag   (format "  (:tags (t . %-10s) :value %s)"
-                      (plist-get input :text)
-                      (plist-get input :value)))
-      ('title (format "  (:text %-20s :value %s :type %s)"
-                      (plist-get input :text)
-                      (plist-get input :value)
-                      (plist-get input :string-type)))
-      ('feed (format "  (:text %-20s :value %s :type %s :attr %s%s)"
-                      (plist-get input :text)
-                      (plist-get input :value)
-                      (plist-get input :string-type)
-                      (plist-get input :attr)
-                      (if-let* ((tags (plist-get input :tags))
-                                (tags-p (not (string= tags ""))))
-                          (format " :tags (t . %s)" tags) "")))
-      ('title-or-content
-       (format "  (:text %-20s :title-value %s :content-value %s :type %s)"
-               (plist-get input :text)
-               (plist-get input :title-value)
-               (plist-get input :content-value)
-               (plist-get input :string-type)))))
-
-  (let ((a 'hh))
-    (if-let (b (if (equal a 'hh) 'joy 'sad)) b nil))
-  
-  (defun org-score-create-lines (infos type)
-    "Create lines (strings) for score file section of TYPE.
-  You can pass all INFOS, and they will be filtered for TYPE."
-    (let ((lines nil)
-          (type-infos (org-score-filter-infos infos type)))
-      (push (format " (\"%s\"" (symbol-name type)) lines)
-      (dolist (info type-infos)
-        (push (org-score-create-line info type) lines))
-      (push "  )" lines)
-      (reverse lines)))  
-   
-  (defun org-score-create-buffer-file (filename)
-    "Create temp buffer from FILENAME and write to file."
-    (let ((infos (org-score-parse-input filename))
-          (types '(tag title title-or-content feed)))
-      (save-excursion
-        (with-output-to-temp-buffer "*Result*"
-          (goto-char (point-min))
-          (princ ";;; Elfeed score file     -*- lisp -*-\n")
-          (dolist (type types)
-            (dolist (line (org-score-create-lines infos type))
-              (princ (format "%s\n" line))))
-          (pop-to-buffer "*Result*")
-          (when (file-writable-p org-score-output-file)
-            (write-region (point-min)
-                          (point-max)
-                          org-score-output-file))))))
-
-  (defun org-score-run ()
-    (interactive)
-    (org-score-create-buffer-file org-score-input-file-TEST))
-
-  (bind-key "C-c C-j" #'org-score-run 'emacs-lisp-mode-map)
-
-  (ert-deftest tags ()
-    (should
-     (equal
-      (org-score-create-line
-       '(:section "title" :text "macOS" :value "-200" :string-type "S") 'tag)
-      "  (:tags (t .  macOS) :value -200)")))
-
-  (ert-deftest parse-input-file ()
-    (should (equal
-             (take 3 (org-score-parse-input org-score-input-file-TEST))
-             ((:section "title" :text "macOS" :value "-200" :string-type "S")
-              (:section "title" :text "Germany" :value "+100" :string-type "s")
-              (:section "title" :text "WSJ" :value "+200" :string-type "S")))))
-#+end_src
+* table 
+#+BEGIN: columnview :indent t :hlines nil :id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0" :format "%ITEM %SECTION %VALUE %TITLEVALUE %CONTENTVALUE %STRINGTYPE %ATTR %FEED"
+| ITEM                                    | SECTION          | VALUE | TITLEVALUE | CONTENTVALUE | STRINGTYPE | ATTR | FEED |
+|-----------------------------------------+------------------+-------+------------+--------------+------------+------+------|
+| scores                                  |                  |       |            |              |            |      |      |
+| \_  Events                              |                  |       |            |              |            |      |      |
+| \_    air show                          | title-or-content |       |        300 |         +400 | s          |      |      |
+| \_    cosa fare nel weekend             | title-or-content |       |        200 |          150 | s          |      |      |
+| \_    Was geht am Wochenende            | title-or-content |       |        200 |         +200 | s          |      |      |
+| \_  Science interesting                 |                  |       |            |              |            |      |      |
+| \_    nuclear                           | title-or-content |       |        100 |          200 | s          |      |      |
+| \_    fusion energy                     | title-or-content |       |        100 |          200 | s          |      |      |
+| \_    science                           | tag              |   100 |            |              |            |      |      |
+| \_  Germany                             | title            |   100 |            |              | s          |      |      |
+| \_  Interesting on economy              |                  |       |            |              |            |      |      |
+| \_    assorted links                    | title            |   150 |            |              | s          |      |      |
+| \_    WSJ                               | title            |   200 |            |              | S          |      |      |
+| \_    OECD                              | title-or-content |       |        100 |          120 | S          |      |      |
+| \_    migrant                           | title-or-content |       |        100 |          250 | s          |      |      |
+| \_    Marginal Revolution               | feed             |   200 |            |              | S          | t    |      |
+| \_  Technology                          |                  |       |            |              |            |      |      |
+| \_    Sacha Chua                        | title            |    50 |            |              | S          |      |      |
+| \_    emacs                             | tag              |  -100 |            |              |            |      |      |
+| \_    jwz                               | feed             |  -100 |            |              | S          | t    |      |
+| \_    Hacker News                       | feed             |   200 |            |              | S          | t    |      |
+| \_    robot                             | title-or-content |       |        300 |         +400 | s          |      |      |
+| \_  GuardianOpinion                     | feed             |  -100 |            |              | S          | t    |      |
+| \_  The Guardian links                  |                  |       |            |              |            |      |      |
+| \_    /australia-news/                  | link             |  -300 |            |              | s          |      |      |
+| \_    /football/                        | link             |  -500 |            |              | s          |      |      |
+| \_    /fashion/                         | link             |  -300 |            |              | s          |      |      |
+| \_    /tv-and-radio/                    | link             |  -200 |            |              | s          |      |      |
+| \_    /world/                           | link             |   100 |            |              | s          |      |      |
+| \_    /environment/                     | link             |   100 |            |              | s          |      |      |
+| \_    /global-development/              | link             |   200 |            |              | s          |      |      |
+| \_    /money/                           | link             |   200 |            |              | s          |      |      |
+| \_    /us-news/                         | link             |  -100 |            |              | s          |      |      |
+| \_    /travel/                          | link             |  -100 |            |              | s          |      |      |
+| \_    /books/                           | link             |  -100 |            |              | s          |      |      |
+| \_    /film/                            | link             |  -100 |            |              | s          |      |      |
+| \_    /artanddesign/                    | link             |  -100 |            |              | s          |      |      |
+| \_    /food/                            | link             |  -100 |            |              | s          |      |      |
+| \_    /society/                         | link             |  -100 |            |              | s          |      |      |
+| \_    /audio/                           | link             |  -100 |            |              | s          |      |      |
+| \_    /culture/                         | link             |  -100 |            |              | s          |      |      |
+| \_    /commentisfree/                   | link             |  -100 |            |              | s          |      |      |
+| \_  Guardian                            | feed             |   100 |            |              | S          | t    |      |
+| \_  Planet Emacslife                    | feed             |   100 |            |              | S          | t    |      |
+| \_  Politics                            |                  |       |            |              |            |      |      |
+| \_    euro\verttopics                   | feed             |   200 |            |              | S          | t    |      |
+| \_    POLITICO                          | feed             |   200 |            |              | S          | t    |      |
+| \_  Disinformatico                      | feed             |   200 |            |              | S          | t    |      |
+| \_  OECD                                | feed             |   200 |            |              | S          | t    |      |
+| \_  Local news                          |                  |       |            |              |            |      |      |
+| \_    tuebingen                         | tag              |   300 |            |              |            |      |      |
+| \_    VareseNews                        | feed             |   200 |            |              | S          | t    |      |
+| \_    Eco Risveglio                     | feed             |   100 |            |              | S          | t    |      |
+| \_    A9                                | title-or-content |       |       1500 |          500 | s          |      |      |
+| \_    alaska                            | title-or-content |       |        100 |          100 | s          |      |      |
+| \_    chiusure                          | title            |   100 |            |              | s          |      |      |
+| \_  Very Important news                 |                  |       |            |              |            |      |      |
+| \_    Il Post                           | feed             |   400 |            |              | S          | t    |      |
+| \_    altalex.com                       | link             |   300 |            |              | s          |      |      |
+| \_  Investigative journalism            |                  |       |            |              |            |      |      |
+| \_    The Intercept                     | feed             |   300 |            |              | S          | t    |      |
+| \_  Important news                      |                  |       |            |              |            |      |      |
+| \_    https://www.ft.com                | link             |   100 |            |              | s          |      |      |
+| \_    WSJ.com: World News               | feed             |   100 |            |              | S          | t    |      |
+| \_    Italy                             | title            |   150 |            |              | s          |      |      |
+| \_    Meloni                            | title-or-content |       |        100 |         +100 | s          |      |      |
+| \_  Career                              |                  |       |            |              |            |      |      |
+| \_    offerte-lavoro                    | link             |   400 |            |              | s          |      |      |
+| \_  Not interesting                     |                  |  -300 |            |              |            |      |      |
+| \_    Le canzoni                        | title            |  -300 |            |              | s          |      |      |
+| \_    peanuts                           | link             |  -300 |            |              | s          |      |      |
+| \_    /charlie/                         | link             |  -200 |            |              | s          |      |      |
+| \_    https://www.ilpost.it/newsletter/ | link             |  -200 |            |              | s          |      |      |
+| \_    https://www.ilpost.it/episodes/   | link             |  -200 |            |              | s          |      |      |
+| \_    macOS                             | title            |  -300 |            |              | S          |      |      |
+| \_    /sport/                           | link             |  -200 |            |              | s          |      |      |
+| \_    sport                             | tag              |  -500 |            |              |            |      |      |
+| \_    Elon                              | title            |  -100 |            |              | S          |      |      |
+| \_    opinion                           | tag              |  -100 |            |              |            |      |      |
+| \_  To avoid!                           |                  |       |            |              |            |      |      |
+| \_    Football                          | title            |  -500 |            |              | s          |      |      |
+| \_    soccer                            | tag              | -1000 |            |              |            |      |      |
+| \_    Pro Patria                        | title-or-content |       |       -500 |         -500 | s          |      |      |
+#+END:  
 * scores
-** science
 :PROPERTIES:
-:VALUE:    +10
+:COLUMNS: %ITEM %SECTION %VALUE %TITLEVALUE %CONTENTVALUE %STRINGTYPE %ATTR %FEED
+:TYPE_ALL:   S s
+:SECTION_ALL:  title title-or-content feed tag link
+:ATTR_ALL:     t
+:ID:       9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0
+:END:   
+** Events
+*** air show
+:PROPERTIES:
+:SECTION:  title-or-content
+:CONTENTVALUE:    +400
+:STRINGTYPE:     s
+:TITLEVALUE: 300
+:END:   
+*** cosa fare nel weekend
+:PROPERTIES:
+:SECTION:  title-or-content
+:CONTENTVALUE:    150
+:STRINGTYPE:     s
+:TITLEVALUE: 200
+:END:   
+*** Was geht am Wochenende
+:PROPERTIES:
+:SECTION:  title-or-content
+:CONTENTVALUE:    +200
+:STRINGTYPE:     s
+:TITLEVALUE: 200
+:END:   
+** Science interesting
+*** nuclear
+:PROPERTIES:
+:SECTION:  title-or-content
+:CONTENTVALUE:    200
+:STRINGTYPE:     s
+:TITLEVALUE: 300
+:END:   
+*** fusion energy
+:PROPERTIES:
+:SECTION:  title-or-content
+:CONTENTVALUE:    200
+:STRINGTYPE:     s
+:TITLEVALUE: 500
+:END:   
+*** science
+:PROPERTIES:
+:VALUE:    100
 :SECTION:  tag
+:END:   
+** Germany
+:PROPERTIES:
+:FEEDS:
+:SECTION:  title
+:VALUE:    100
+:STRINGTYPE:     s
+:END:   
+** Interesting on economy
+*** assorted links
+:PROPERTIES:
+:VALUE:    150
+:SECTION:  title
+:FEEDS:     Marginal Revolution
+:STRINGTYPE:     s
 :END:
-** sport
+*** WSJ 
+:PROPERTIES:
+:FEEDS:
+:SECTION:  feed
+:VALUE:    200
+:STRINGTYPE:     S
+:ATTR:     t
+:END:   
+*** OECD
+:PROPERTIES:
+:SECTION:  title-or-content
+:CONTENTVALUE:    120
+:STRINGTYPE:     S
+:TITLEVALUE: 100
+:END:   
+*** migrant
+:PROPERTIES:
+:SECTION:  title-or-content
+:CONTENTVALUE:    250
+:STRINGTYPE:     s
+:TITLEVALUE: 100
+:END:   
+*** Marginal Revolution
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:TAGS:
+:VALUE:    200
+:END:   
+** Technology
+*** Sacha Chua
+:PROPERTIES:
+:VALUE:    200
+:SECTION:  title
+:STRINGTYPE:     S
+:FEEDS:  
+:END:   
+*** emacs
+:PROPERTIES:
+:SECTION:  tag
+:VALUE:    -100
+:END:   
+*** Protesilaos Stavrou
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:VALUE:    400
+:END:   
+*** jwz 
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:VALUE:    -100
+:END:   
+*** Hacker News
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:VALUE:    200
+:END:   
+*** robot
+:PROPERTIES:
+:SECTION:  title-or-content
+:CONTENTVALUE: 100
+:STRINGTYPE:     s
+:TITLEVALUE: 300
+:END:   
+** GuardianOpinion
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:VALUE:    -100
+:END:   
+** The Guardian links
+*** /australia-news/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -300
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:   
+*** /football/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -500
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:   
+*** /fashion/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -300
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+*** /tv-and-radio/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -200
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+*** /world/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+*** /environment/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+*** /global-development/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    200
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+*** /money/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    200
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+*** /us-news/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+*** /travel/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+*** /books/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+*** /film/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+*** /artanddesign/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+*** /food/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+*** /society/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+*** /audio/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+*** /culture/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+*** /commentisfree/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+** Guardian
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:VALUE:    100
+:END:
+** Planet Emacslife
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:VALUE:    100
+:END:   
+** Politics
+*** euro|topics
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:VALUE:    200
+:END:
+*** POLITICO
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:VALUE:    200
+:END:
+** Disinformatico
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:VALUE:    300
+:END:
+** OECD 
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:VALUE:    200
+:END:   
+** Local news
+*** tuebingen
+:PROPERTIES:
+:SECTION:  tag
+:VALUE:    300
+:END:   
+*** VareseNews
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:  t
+:VALUE:    300
+:END:   
+*** Eco Risveglio
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:VALUE:    100
+:END:
+*** A9  
+:PROPERTIES:
+:SECTION:  title-or-content
+:TITLEVALUE:    1500
+:CONTENTVALUE:    500
+:STRINGTYPE:     s
+:END:   
+*** alaska
+:PROPERTIES:
+:SECTION:  title-or-content
+:CONTENTVALUE:    100
+:STRINGTYPE:     s
+:TITLEVALUE: 100
+:END:   
+*** chiusure
+:PROPERTIES:
+:SECTION:  title
+:VALUE:    100
+:STRINGTYPE:     s
+:END:   
+** Very Important news
+*** Il Post
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:VALUE:    400
+:END:   
+*** altalex.com
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    300
+:STRINGTYPE:     s
+:END:   
+** Investigative journalism
+*** The Intercept
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:VALUE:    300
+:END:   
+** Important news
+*** https://www.ft.com
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    100
+:STRINGTYPE:     s
+:END:
+*** WSJ.com: World News
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:VALUE:    100
+:END:
+*** Italy
+:PROPERTIES:
+:SECTION:  title
+:VALUE:    150
+:STRINGTYPE:     s
+:END:
+** Career
+*** offerte-lavoro
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    400
+:STRINGTYPE:     s
+:END:
+** Not interesting
+:PROPERTIES:
+:VALUE:    -300
+:END:
+*** Le canzoni
+:PROPERTIES:
+:SECTION:  title
+:VALUE:    -300
+:STRINGTYPE:     s
+:END:
+*** peanuts
+:PROPERTIES:
+:SECTION:  link
+:STRINGTYPE:     s
+:VALUE:    -300
+:END:
+*** /charlie/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -200
+:STRINGTYPE:     s
+:END:
+*** https://www.ilpost.it/newsletter/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -200
+:STRINGTYPE:     s
+:END:
+*** https://www.ilpost.it/episodes/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -200
+:STRINGTYPE:     s
+:END:   
+*** macOS
+:PROPERTIES:
+:SECTION:  title
+:VALUE:    -300
+:FEEDS:     Hacker News
+:STRINGTYPE:     S
+:END:
+*** /sport/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -200
+:STRINGTYPE:     s
+:END:
+*** sport
 :PROPERTIES:
 :SECTION:  tag
 :VALUE:    -500
 :END:
-** emacs
+*** Elon
+:PROPERTIES:
+:SECTION:  title
+:FEEDS:
+:VALUE:    -100
+:STRINGTYPE:     S
+:END:   
+*** opinion
 :PROPERTIES:
 :SECTION:  tag
 :VALUE:    -100
 :END:
-** opinion
+** To avoid!
+*** Football
+:PROPERTIES:
+:FEEDS:
+:SECTION:  title
+:VALUE:    -500
+:STRINGTYPE:     s
+:END:   
+*** soccer
 :PROPERTIES:
 :SECTION:  tag
-:VALUE:    -50
+:VALUE:    -1000
 :END:
-** tuebingen
+*** Pro Patria
 :PROPERTIES:
-:SECTION:  tag
-:VALUE:    +250
-:END:
-** Sacha Chua
-:PROPERTIES:
-:VALUE:    +50
-:SECTION:  title
-:TYPE:     S
-:FEED:
-:END:
-** Elon
-:PROPERTIES:
-:SECTION:  title
-:FEED:
-:VALUE:    -100
-:TYPE:     S
-:END:
-** WSJ
-:PROPERTIES:
-:FEED:
-:SECTION:  title
-:VALUE:    +200
-:TYPE:     S
-:END:
-** Football
-:PROPERTIES:
-:FEED:
-:SECTION:  title
-:VALUE:    -100
-:TYPE:     s
-:END:
-** Germany
-:PROPERTIES:
-:FEED:
-:SECTION:  title
-:VALUE:    +100
-:TYPE:     s
-:END:
-** chiusure
-:PROPERTIES:
-:SECTION:  title
-:VALUE:    +100
-:TYPE:     s
-:END:
-** Italy
-:PROPERTIES:
-:SECTION:  title
-:VALUE:    +150
-:TYPE:     s
-:END:
-** assorted links
-:PROPERTIES:
-:VALUE:    +150
-:SECTION:  title
-:FEED:     Marginal Revolution
-:TYPE:     s
-:END:
-** Peanuts
-:PROPERTIES:
-:SECTION:  title
-:VALUE:    -300
-:TYPE:     s
-:END:
-** Le canzoni
-:PROPERTIES:
-:SECTION:  title
-:VALUE:    -300
-:TYPE:     s
-:END:
-** macOS
-:PROPERTIES:
-:SECTION:  title
-:FEED:     Hacker News
-:VALUE:    -200
-:TYPE:     S
+:SECTION:  title-or-content
+:CONTENTVALUE:    -500
+:STRINGTYPE:     s
+:TITLEVALUE: -500
 :END:

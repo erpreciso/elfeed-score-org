@@ -1,6 +1,37 @@
-#+COLUMNS: %ITEM %SECTION %VALUE %STRINGTYPE %FEED
+#+COLUMNS: %ITEM %SECTION %VALUE %STRINGTYPE %FEEDS
 
 * scores
+** air show
+:PROPERTIES:
+:SECTION:  title-or-content
+:FEEDS:
+:TITLEVALUE:     +400
+:CONTENTVALUE:   +100
+:STRINGTYPE:     s
+:END:
+** Il Post
+:PROPERTIES:
+:SECTION:  feed
+:TAGS:
+:VALUE:    +400
+:STRINGTYPE:     s
+:ATTR:     t
+:END:
+** https://www.ilpost.it/episodes/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -600
+:STRINGTYPE:     S
+:ATTR:     t
+:END:
+** offerte-lavoro
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    +400
+:STRINGTYPE:     s
+:ATTR:     t
+:FEEDS:    varesenews
+:END:
 ** science
 :PROPERTIES:
 :VALUE:    +10
@@ -18,14 +49,14 @@
 :END:
 ** WSJ
 :PROPERTIES:
-:FEED:
+:FEEDS:
 :SECTION:  title
 :VALUE:    +200
 :STRINGTYPE:     S
 :END:
 ** Germany
 :PROPERTIES:
-:FEED:
+:FEEDS:  Il Post
 :SECTION:  title
 :VALUE:    +100
 :STRINGTYPE:     s
@@ -33,25 +64,9 @@
 ** macOS
 :PROPERTIES:
 :SECTION:  title
-:FEED:     Hacker News
+:FEEDS:     Hacker News
 :VALUE:    -200
 :STRINGTYPE:     S
-:END:
-** air show
-:PROPERTIES:
-:SECTION:  title-or-content
-:FEED:
-:TITLEVALUE:     +400
-:CONTENTVALUE:   +100
-:STRINGTYPE:     s
-:END:
-** Il Post
-:PROPERTIES:
-:SECTION:  feed
-:TAGS:
-:VALUE:    +400
-:STRINGTYPE:     s
-:ATTR:     t
 :END:
 ** VareseNews
 :PROPERTIES:
@@ -60,13 +75,4 @@
 :VALUE:    -600
 :STRINGTYPE:     S
 :ATTR:     t
-:END:
-** https://www.ilpost.it/episodes/
-:PROPERTIES:
-:SECTION:  link
-:TAGS:     sport
-:VALUE:    -600
-:STRINGTYPE:     S
-:ATTR:     t
-:FEEDS:    varesenews
 :END:
