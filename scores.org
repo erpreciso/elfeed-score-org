@@ -140,13 +140,6 @@
 :VALUE:    100
 :SECTION:  tag
 :END:   
-** Germany
-:PROPERTIES:
-:FEEDS:
-:SECTION:  title
-:VALUE:    100
-:STRINGTYPE:     s
-:END:   
 ** Interesting on economy
 *** assorted links
 :PROPERTIES:
@@ -182,7 +175,13 @@
 :SECTION:  feed
 :STRINGTYPE:     S
 :ATTR:     t
-:TAGS:
+:VALUE:    200
+:END:   
+*** OECD
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
 :VALUE:    200
 :END:   
 ** Technology
@@ -226,148 +225,7 @@
 :STRINGTYPE:     s
 :TITLEVALUE: 300
 :END:   
-** GuardianOpinion
-:PROPERTIES:
-:SECTION:  feed
-:STRINGTYPE:     S
-:ATTR:     t
-:VALUE:    -100
-:END:   
-** The Guardian links
-*** /australia-news/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    -300
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:   
-*** /football/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    -500
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:   
-*** /fashion/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    -300
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:
-*** /tv-and-radio/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    -200
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:
-*** /world/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    100
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:
-*** /environment/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    100
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:
-*** /global-development/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    200
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:
-*** /money/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    200
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:
-*** /us-news/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    -100
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:
-*** /travel/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    -100
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:
-*** /books/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    -100
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:
-*** /film/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    -100
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:
-*** /artanddesign/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    -100
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:
-*** /food/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    -100
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:
-*** /society/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    -100
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:
-*** /audio/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    -100
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:
-*** /culture/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    -100
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:
-*** /commentisfree/
-:PROPERTIES:
-:SECTION:  link
-:VALUE:    -100
-:STRINGTYPE:     s
-:FEEDS:     Guardian
-:END:
-** Guardian
-:PROPERTIES:
-:SECTION:  feed
-:STRINGTYPE:     S
-:ATTR:     t
-:VALUE:    100
-:END:
-** Planet Emacslife
+*** Planet Emacslife
 :PROPERTIES:
 :SECTION:  feed
 :STRINGTYPE:     S
@@ -396,13 +254,6 @@
 :ATTR:     t
 :VALUE:    300
 :END:
-** OECD 
-:PROPERTIES:
-:SECTION:  feed
-:STRINGTYPE:     S
-:ATTR:     t
-:VALUE:    200
-:END:   
 ** Local news
 *** tuebingen
 :PROPERTIES:
@@ -423,7 +274,7 @@
 :ATTR:     t
 :VALUE:    100
 :END:
-*** A9  
+*** A9
 :PROPERTIES:
 :SECTION:  title-or-content
 :TITLEVALUE:    1500
@@ -457,14 +308,6 @@
 :VALUE:    300
 :STRINGTYPE:     s
 :END:   
-** Investigative journalism
-*** The Intercept
-:PROPERTIES:
-:SECTION:  feed
-:STRINGTYPE:     S
-:ATTR:     t
-:VALUE:    300
-:END:   
 ** Important news
 *** https://www.ft.com
 :PROPERTIES:
@@ -485,6 +328,162 @@
 :VALUE:    150
 :STRINGTYPE:     s
 :END:
+*** Guardian
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:VALUE:    100
+:END:
+*** The Guardian links
+**** /australia-news/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -300
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:   
+**** /football/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -500
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:   
+**** /fashion/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -300
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+**** /tv-and-radio/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -200
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+**** /world/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+**** /environment/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+**** /global-development/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    200
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+**** /money/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    200
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+**** /us-news/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+**** /travel/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+**** /books/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+**** /film/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+**** /artanddesign/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+**** /food/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+**** /society/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+**** /audio/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+**** /culture/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+**** /commentisfree/
+:PROPERTIES:
+:SECTION:  link
+:VALUE:    -100
+:STRINGTYPE:     s
+:FEEDS:     Guardian
+:END:
+*** GuardianOpinion
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:VALUE:    -100
+:END:   
+*** Germany
+:PROPERTIES:
+:FEEDS:
+:SECTION:  title
+:VALUE:    100
+:STRINGTYPE:     s
+:END:   
+** Investigative journalism
+*** The Intercept
+:PROPERTIES:
+:SECTION:  feed
+:STRINGTYPE:     S
+:ATTR:     t
+:VALUE:    300
+:END:   
 ** Career
 *** offerte-lavoro
 :PROPERTIES:

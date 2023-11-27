@@ -4,27 +4,27 @@
 
 ;;; GET DATA FROM FILE
 
-(defvar org-score-input-file "~/org/projects/elfeed-score-org/scores.org"
+(defvar elfeed-score-org-input-file (expand-file-name "~/org/projects/elfeed-score-org/scores.org")
   "Org file with scores.")
 
-(defvar org-score-input-file-TEST
+(defvar elfeed-score-org-input-file-TEST
   "~/org/projects/elfeed-score-org/test-scores.org"
   "Org file with scores.")
 
-(defvar org-score-rule-type-property (intern ":SECTION")
+(defvar elfeed-score-org-rule-type-property (intern ":SECTION")
   "Name of the property that identifies the type of rule.
 Each type of rule has its own sublist in the score file.")
 
-(defvar org-score-value-property        (intern ":VALUE"))
-(defvar org-score-titlevalue-property   (intern ":TITLEVALUE"))
-(defvar org-score-contentvalue-property (intern ":CONTENTVALUE"))
-(defvar org-score-string-type-property  (intern ":STRINGTYPE"))
-(defvar org-score-attr-property         (intern ":ATTR"))
-(defvar org-score-tags-property         (intern ":TAGS"))
-(defvar org-score-feeds-property        (intern ":FEEDS"))
-(defvar org-score-text-property         (intern ":raw-value"))
+(defvar elfeed-score-org-value-property        (intern ":VALUE"))
+(defvar elfeed-score-org-titlevalue-property   (intern ":TITLEVALUE"))
+(defvar elfeed-score-org-contentvalue-property (intern ":CONTENTVALUE"))
+(defvar elfeed-score-org-string-type-property  (intern ":STRINGTYPE"))
+(defvar elfeed-score-org-attr-property         (intern ":ATTR"))
+(defvar elfeed-score-org-tags-property         (intern ":FEEDTAGS"))
+(defvar elfeed-score-org-feeds-property        (intern ":FEEDS"))
+(defvar elfeed-score-org-text-property         (intern ":raw-value"))
 
-(defvar org-score-sections-variables
+(defvar elfeed-score-org-sections-variables
   '(title (:section :text :value :type :feeds)
           feed (:section :text :value :type :tags :attr)
           title-or-content (:section :text :title-value :content-value :type)
@@ -32,10 +32,10 @@ Each type of rule has its own sublist in the score file.")
           link (:section :text :value :type :feeds))
   "Plist with sections, and related variables to capture.")
 
-(defun org-score-parse-headline (hl)
+(defun elfeed-score-org-parse-headline (hl)
   "Return `entry' plist with all properties from org headline HL."
-  (let* ((section (plist-get (car (cdr hl)) org-score-rule-type-property))
-         (expected-vars (org-score-variables-by-section section)))
+  (let* ((section (plist-get (car (cdr hl)) elfeed-score-org-rule-type-property))
+         (expected-vars (elfeed-score-org-variables-by-section section)))
     (flatten-list
      (apply
       #'list
@@ -44,89 +44,89 @@ Each type of rule has its own sublist in the score file.")
          (pcase var
            (:section
             (list var (plist-get (car (cdr hl))
-                                 org-score-rule-type-property)))
+                                 elfeed-score-org-rule-type-property)))
            (:text
-            (list var (plist-get (car (cdr hl)) org-score-text-property)))
+            (list var (plist-get (car (cdr hl)) elfeed-score-org-text-property)))
            (:value
             (list var (plist-get (car (cdr hl))
-                                 org-score-value-property)))
+                                 elfeed-score-org-value-property)))
            (:type
             (list var (plist-get (car (cdr hl))
-                                 org-score-string-type-property)))
+                                 elfeed-score-org-string-type-property)))
            (:title-value
             (list var (plist-get (car (cdr hl))
-                                 org-score-titlevalue-property)))
+                                 elfeed-score-org-titlevalue-property)))
            (:content-value
             (list var (plist-get (car (cdr hl))
-                                 org-score-contentvalue-property)))
+                                 elfeed-score-org-contentvalue-property)))
            (:attr
             (list var (if-let (val (plist-get (car (cdr hl))
-                                 org-score-attr-property)) val "t")))
+                                 elfeed-score-org-attr-property)) val "t")))
            (:feeds
             (list var (plist-get (car (cdr hl))
-                                 org-score-feeds-property)))
+                                 elfeed-score-org-feeds-property)))
            (:tags
             (list var (if-let (val (plist-get (car (cdr hl))
-                                 org-score-tags-property)) val "")))))
+                                 elfeed-score-org-tags-property)) val "")))))
        expected-vars)))))
 
-(defun org-score-parse-input (filename)
+(defun elfeed-score-org-parse-input (filename)
   "Parse org FILENAME and return list of entries.
 Entry is a plist (:section section :text text etc.)"
   (let* ((entries nil)
          (filter
           (lambda (h)
-            (if (org-element-property org-score-rule-type-property h) h nil)))
+            (if (org-element-property elfeed-score-org-rule-type-property h) h nil)))
          (ast (with-temp-buffer
                 (insert-file-contents filename)
                 (org-element-parse-buffer)))
          (headlines (org-element-map ast 'headline filter)))
-    (seq-map (lambda (hl) (push (org-score-parse-headline hl) entries))
+    (seq-map (lambda (hl) (push (elfeed-score-org-parse-headline hl) entries))
              headlines)
     (reverse entries)))
 
-(defun org-score-filter-entries (entries section)
+(defun elfeed-score-org-filter-entries (entries section)
   "Given SECTION, return entries of that type from list ENTRIES."
   (seq-filter
    (lambda (entry) (equal (symbol-name section) (plist-get entry :section)))
    entries))
 
-(defun org-score-variables-by-section (section)
+(defun elfeed-score-org-variables-by-section (section)
   "Get the infos for SECTION."
-  (plist-get org-score-sections-variables
+  (plist-get elfeed-score-org-sections-variables
              (if (stringp section) (intern section) section)))
 
-(defun org-score-get-value (entry variable)
+(defun elfeed-score-org-get-value (entry variable)
   "Return value of VARIABLE from ENTRY."
   (plist-get entry variable))
 
-(defun org-score-plist-variables (plist)
+(defun elfeed-score-org-plist-variables (plist)
   "Return all variables included in PLIST."
   (seq-filter (lambda (x) x)
               (seq-map-indexed (lambda (elt idx)
                                  (if (cl-oddp idx) elt)) plist)))
 
-(defun org-score-plist-keys (plist)
+(defun elfeed-score-org-plist-keys (plist)
   "Return all keys of PLIST."
   (seq-filter (lambda (x) x)
               (seq-map-indexed (lambda (elt idx)
                                  (if (cl-evenp idx) elt)) plist)))
 
-(defun org-score-check-completeness (entry)
+(defun elfeed-score-org-check-completeness (entry)
   "Raise error if ENTRY does not include all variables expected for
 its section type."
-  (let* ((section (org-score-get-value entry :section))
-         (expected-variables (org-score-variables-by-section section))
-         (entry-variables (org-score-plist-keys entry))
+  (let* ((section (elfeed-score-org-get-value entry :section))
+         (expected-variables (elfeed-score-org-variables-by-section section))
+         (entry-variables (elfeed-score-org-plist-keys entry))
          (diff (seq-difference expected-variables entry-variables)))
     (if diff (error "Missing variable %s from entry: %s" diff entry))))
 
-(defun org-score-format-variable-value (entry var)
+(defun elfeed-score-org-format-variable-value (entry var)
   "Given ENTRY and VARIABLE, format the corresponding value to be
 inserted in output text. As example, text is quoted, and tags contain
 the flag."
-  (let ((section (org-score-get-value entry :section))
-        (val (org-score-get-value entry var)))
+  (let ((section (elfeed-score-org-get-value entry :section))
+        (val (elfeed-score-org-get-value entry var)))
     (if (and (string= section "tag") (equal var :text))
         (format ":tags (t . %s) " val)
     (pcase var
@@ -143,58 +143,67 @@ the flag."
        (format "%s %s " var val))
       ))))
 
-(defun org-score-create-line (entry section)
+(defun elfeed-score-org-create-line (entry section)
   "Given ENTRY, return formatted string LINE."
-  (org-score-check-completeness entry)
-  (let* ((section (org-score-get-value entry :section))
-         (variables (org-score-variables-by-section section)))
+  (elfeed-score-org-check-completeness entry)
+  (let* ((section (elfeed-score-org-get-value entry :section))
+         (variables (elfeed-score-org-variables-by-section section)))
     (concat "  ("
             (apply #'concat
                    (seq-map
                     (lambda (var)
-                      (format "%s" (org-score-format-variable-value entry var)))
+                      (format "%s" (elfeed-score-org-format-variable-value entry var)))
                     variables))
             ")")))
 
-(defun org-score-create-lines (entries section)
+(defun elfeed-score-org-create-lines (entries section)
   "Create lines (strings) for score file SECTION.
 You can pass all INFOS, and they will be filtered for SECTION."
   (let ((lines nil)
-        (entries (org-score-filter-entries entries section)))
+        (entries (elfeed-score-org-filter-entries entries section)))
     (push (format " (\"%s\"" (symbol-name section)) lines)
     (dolist (entry entries)
-      (push (org-score-create-line entry section) lines))
+      (push (elfeed-score-org-create-line entry section) lines))
     (push "  )" lines)
     (reverse lines)))
 
-(defun org-score-create-buffer-file (filename)
+(defun elfeed-score-org-create-buffer-file (filename)
   "Create temp buffer from FILENAME and write to file."
-  (let ((entries (org-score-parse-input filename))
-        (sections (org-score-plist-keys org-score-sections-variables)))
+  (let ((entries (elfeed-score-org-parse-input filename))
+        (sections (elfeed-score-org-plist-keys elfeed-score-org-sections-variables)))
     (save-excursion
       (with-output-to-temp-buffer "*Result*"
         (goto-char (point-min))
         (princ ";;; Elfeed score file     -*- lisp -*-\n(\n")
         (dolist (section sections)
-          (dolist (line (org-score-create-lines entries section))
+          (dolist (line (elfeed-score-org-create-lines entries section))
             (princ (format "%s\n" line))))
         (princ  " (mark -2500)\n (\"adjust-tags\")\n")
         (princ ")")
         (pop-to-buffer "*Result*")
-        (when (file-writable-p org-score-output-file)
+        (when (file-writable-p elfeed-score-org-output-file)
+          (let ((backup-name (concat (make-backup-file-name elfeed-score-org-output-file)
+                                     (format-time-string "%Y%m%dT%H%M%S"))))
+            (copy-file elfeed-score-org-output-file backup-name))
           (write-region (point-min)
                         (point-max)
-                        org-score-output-file))))))
+                        elfeed-score-org-output-file))))))
 
-(defun org-score-run ()
+
+(defun elfeed-score-org-hook ()
+  "Run elfeed-score-org after saving the score file."
+  (when (string= (buffer-file-name) elfeed-score-org-input-file)
+    (elfeed-score-org-create-buffer-file elfeed-score-org-input-file)))
+
+(defun elfeed-score-org-run ()
   (interactive)
-  (org-score-create-buffer-file org-score-input-file))
+  (elfeed-score-org-create-buffer-file elfeed-score-org-input-file))
 
-(bind-key "C-c C-j" #'org-score-run 'emacs-lisp-mode-map)
-;; (org-score-setup)
+(bind-key "C-c C-j" #'elfeed-score-org-run 'emacs-lisp-mode-map)
+;; (elfeed-score-org-setup)
 
 ;;; ORG CAPTURE
-(defun org-score-capture-template (type)
+(defun elfeed-score-org-capture-template (type)
   (concat "%i* %^{text}\n"
           ":PROPERTIES:\n"
           ":SECTION: " (symbol-name type) "\n"
@@ -206,30 +215,32 @@ You can pass all INFOS, and they will be filtered for SECTION."
           ":ENTERED:  %U\n"
           ":END:"))
 
-(defun org-score-setup ()
-  "Setup org-capture templates for score entry."
+(defun elfeed-score-org-setup ()
+  "Add hook to generate score file when saving the score file,
+and setup org-capture templates for score entry."
+  (add-hook 'after-save-hook 'elfeed-score-org-hook)
   (let ((group-template '("s" "Score file entry"))
         (entry-template '(("sf" "Score feed" entry
                            (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
                            (function (lambda ()
-                                       (org-score-capture-template 'feed))))
+                                       (elfeed-score-org-capture-template 'feed))))
                           ("st" "Score title" entry
                            (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
                            (function (lambda ()
-                                       (org-score-capture-template 'title))))
+                                       (elfeed-score-org-capture-template 'title))))
                           ("sc" "Score title-or-content" entry
                            (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
                            (function (lambda ()
-                                       (org-score-capture-template
+                                       (elfeed-score-org-capture-template
                                         'title-or-content))))
                           ("sl" "Score link" entry
                            (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
                            (function (lambda ()
-                                       (org-score-capture-template 'link))))
+                                       (elfeed-score-org-capture-template 'link))))
                           ("st" "Score tag" entry
                            (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
                            (function (lambda ()
-                                       (org-score-capture-template 'tag)))))))
+                                       (elfeed-score-org-capture-template 'tag)))))))
     (if (not (member group-template org-capture-templates))
         (setq org-capture-templates
               (append org-capture-templates (list group-template))))
@@ -238,25 +249,25 @@ You can pass all INFOS, and they will be filtered for SECTION."
               (append org-capture-templates entry-template)))))
 
 ;;; OUTPUT DATA
-(defvar org-score-output-file "~/org/areas/emacs/elfeed.score"
+(defvar elfeed-score-org-output-file "~/org/areas/emacs/elfeed.score"
   "Output file with scores, format elfeed-score.")
 
 ;;; TESTS
 (ert-deftest tags ()
   (should
    (equal
-    (org-score-create-line
+    (elfeed-score-org-create-line
      '(:section "title" :text "macOS" :value "-200" :type "S") 'tag)
     "  (:tags (t .  macOS) :value -200)")))
 
 (ert-deftest parse-input-file ()
   (should (equal
-           (take 3 (org-score-parse-input org-score-input-file-TEST))
+           (take 3 (elfeed-score-org-parse-input elfeed-score-org-input-file-TEST))
            ((:section "title" :text "macOS" :value "-200" :type "S")
             (:section "title" :text "Germany" :value "+100" :type "s")
             (:section "title" :text "WSJ" :value "+200" :type "S"))))
   (should (equal
-           (org-score-parse-input org-score-input-file-TEST)
+           (elfeed-score-org-parse-input elfeed-score-org-input-file-TEST)
            '((:text "air show" :title-value "+400" :content-value "+100" :type "s")
              (:section "feed" :text "Il Post" :value "+400" :type "s" :tags "")
              (:text "https://www.ilpost.it/episodes/" :value "-600" :type "S" :feeds)
@@ -270,5 +281,5 @@ You can pass all INFOS, and they will be filtered for SECTION."
              (:section "feed" :text "VareseNews" :value "-600" :type "S" :tags "sport")))))
 
 (ert-deftest entry-complete ()
-  (should-not (org-score-check-completeness
+  (should-not (elfeed-score-org-check-completeness
                '(:section title :text "example text" :value 100 :type s))))
