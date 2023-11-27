@@ -206,9 +206,6 @@ You can pass all INFOS, and they will be filtered for SECTION."
   (interactive)
   (elfeed-score-org-create-buffer-file elfeed-score-org-input-file))
 
-(bind-key "C-c C-j" #'elfeed-score-org-run 'emacs-lisp-mode-map)
-;; (elfeed-score-org-setup)
-
 ;;; ORG CAPTURE
 (defun elfeed-score-org-capture-template (type)
   (concat "%i* %^{text}\n"
@@ -222,6 +219,7 @@ You can pass all INFOS, and they will be filtered for SECTION."
           ":ENTERED:  %U\n"
           ":END:"))
 
+
 (defun elfeed-score-org-setup ()
   "Add hook to generate score file when saving the score file,
 and setup org-capture templates for score entry."
@@ -229,24 +227,24 @@ and setup org-capture templates for score entry."
   (let ((group-template '("s" "Score file entry"))
         (entry-template
          '(("sf" "Score feed" entry
-            (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
+            (file elfeed-score-org-input-file)
             (function (lambda ()
                         (elfeed-score-org-capture-template 'feed))))
            ("st" "Score title" entry
-            (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
+            (file elfeed-score-org-input-file)
             (function (lambda ()
                         (elfeed-score-org-capture-template 'title))))
            ("sc" "Score title-or-content" entry
-            (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
+            (file elfeed-score-org-input-file)
             (function (lambda ()
                         (elfeed-score-org-capture-template
                          'title-or-content))))
            ("sl" "Score link" entry
-            (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
+            (file elfeed-score-org-input-file)
             (function (lambda ()
                         (elfeed-score-org-capture-template 'link))))
            ("st" "Score tag" entry
-            (id "9d5d1d1f-6ae6-4610-a4b6-dbcf321104d0")
+            (file elfeed-score-org-input-file)
             (function (lambda ()
                         (elfeed-score-org-capture-template 'tag)))))))
     (if (not (member group-template org-capture-templates))
@@ -286,3 +284,7 @@ and setup org-capture templates for score entry."
 (ert-deftest entry-complete ()
   (should-not (elfeed-score-org-check-completeness
                '(:section title :text "example text" :value 100 :type s))))
+
+
+(bind-key "C-c C-j" #'elfeed-score-org-run 'emacs-lisp-mode-map)
+(elfeed-score-org-setup)
