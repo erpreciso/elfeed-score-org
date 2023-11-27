@@ -1,7 +1,3 @@
-;; note on type:
-;; - s case-insensitive
-;; - S case-sensitive
-
 ;;; GET DATA FROM FILE
 
 (defvar elfeed-score-org-input-file
@@ -26,11 +22,13 @@ Each type of rule has its own sublist in the score file.")
 (defvar elfeed-score-org-text-property         (intern ":raw-value"))
 
 (defvar elfeed-score-org-sections-variables
-  '(title (:section :text :value :type :feeds)
-          feed (:section :text :value :type :tags :attr)
-          title-or-content (:section :text :title-value :content-value :type)
-          tag (:section :text :value)
-          link (:section :text :value :type :feeds))
+  '(title
+    (:section :text :value :type :feeds)
+    feed
+    (:section :text :value :type :tags :attr)
+    title-or-content (:section :text :title-value :content-value :type :tags)
+    tag (:section :text :value)
+    link (:section :text :value :type :feeds))
   "Plist with sections, and related variables to capture.")
 
 (defun elfeed-score-org-parse-headline (hl)
@@ -125,6 +123,16 @@ its section type."
          (diff (seq-difference expected-variables entry-variables)))
     (if diff (error "Missing variable %s from entry: %s" diff entry))))
 
+(defun elfeed-score-org-format-tags-scoping (section tag-value)
+  "Given TAG-VALUE, the raw string parsed, return formatted string.
+Result is different based on SECTION."
+  (if (or (not val) (equal val "")) ""
+    (apply #'concat
+           (list ":tags ("
+                 (apply #'concat (let ((tags (split-string val " ")))
+                   (seq-map (lambda (tag) (format "%s " tag)) tags)))
+                 ")"))))
+               
 (defun elfeed-score-org-format-variable-value (entry var)
   "Given ENTRY and VARIABLE, format the corresponding value to be
 inserted in output text. As example, text is quoted, and tags contain
@@ -137,11 +145,8 @@ the flag."
         (:section "")
         ((or :text :link)
          (format "%s \"%s\" " var val))
-        (:tags
-         (if (not (or (not val) (equal val "")))
-             (format ":tags (t . %s) " val) ""))
-        (:feeds
-         (if (not (or (not val) (equal val "")))
+        (:tags (elfeed-score-org-format-tags-scoping section val))
+        (:feeds (if (not (or (not val) (equal val "")))
              (format " :feeds (t . ((t s \"%s\")))" val) ""))
         ((or :value :title-value :content-value :attr :type)
          (format "%s %s " var val))
