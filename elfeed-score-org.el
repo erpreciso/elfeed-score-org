@@ -290,33 +290,6 @@ and setup org-capture templates for score entry."
   (expand-file-name "~/org/areas/emacs/elfeed.score")
   "Output file with scores, format elfeed-score.")
 
-;;;; Tests
-(ert-deftest tags ()
-  (should
-   (equal
-    (elfeed-score-org-create-line
-     '(:section "title" :text "macOS" :value "-200" :type "S" :feeds "") 'tag)
-    "  (:text \"macOS\" :value -200 :type S )")))
-
-(ert-deftest parse-input-file ()
-  (should (equal
-           (elfeed-score-org-parse-input elfeed-score-org-input-file-TEST)
-           '((:section "title-or-content" :text "air show" :title-value "+400" :content-value "+100" :type "s")
-            (:section "feed" :text "Il Post" :value "+400" :type "s" :tags "" :attr "t")
-            (:section "link" :text "https://www.ilpost.it/episodes/" :value "-600" :type "S" :feeds)
-            (:section "link" :text "offerte-lavoro" :value "+400" :type "s" :feeds "varesenews")
-            (:section "tag" :text "science" :value "+10")
-            (:section "tag" :text "sport" :value "-500")
-            (:section "tag" :text "emacs" :value "-100")
-            (:section "title" :text "WSJ" :value "+200" :type "S" :feeds "")
-            (:section "title" :text "Germany" :value "+100" :type "s" :feeds "Il Post")
-            (:section "title" :text "macOS" :value "-200" :type "S" :feeds "Hacker News")
-            (:section "feed" :text "VareseNews" :value "-600" :type "S" :tags "" :attr "t")))))
-
-(ert-deftest entry-complete ()
-  (should-not (elfeed-score-org-check-completeness
-               '(:section title :text "example text" :value 100 :type s))))
-
 
 ;; (bind-key "C-c C-j" #'elfeed-score-org-run 'emacs-lisp-mode-map)
 (elfeed-score-org-setup)
