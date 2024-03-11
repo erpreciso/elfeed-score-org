@@ -14,10 +14,6 @@ init file.
 
 *** Minimal setup
 
-**** Load module
-
-With PATH as the path where the module has been copied:
-
 #+begin_src emacs-lisp
   ;; load module, with PATH as module path
   (load-file PATH)
@@ -42,17 +38,6 @@ With PATH as the path where the module has been copied:
   (elfeed-score-org-setup)
 #+end_src
 
-** Use
-
-- Enter elfeed-navi
-- Generate the feed list using `g'
-- Navigate the list of feed titles using `n' and `p'
-- Hit `RET' to enter elfeed and display the buffer `*elfeed-search*'
-  filtered by the feed title selected
-- When returning to elfeed-navi, regenerate the summary using `G';
-  regenerating using `g' would take the current elfeed-search filter
-  that include the feed-title string, producing not-meaningful
-  results.
 * Reference
 ** Score org file structure
 
