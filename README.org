@@ -19,7 +19,17 @@ init file.
 With PATH as the path where the module has been copied:
 
 #+begin_src emacs-lisp
+  ;; load module, with PATH as module path
   (load-file PATH)
+
+  ;; define org file with scores
+  (setq elfeed-score-org-input-file INPUT_FILE)
+
+  ;; define output file path, loaded then in elfeed-score
+  (setq elfeed-score-org-output-file OUTPUT_FILE)
+
+  ;; load score in elfeed-score
+  (setq elfeed-score-serde-score-file OUTPUT_FILE)
 #+end_src
 
 *** Suggested setup
@@ -41,4 +51,30 @@ With PATH as the path where the module has been copied:
   regenerating using `g' would take the current elfeed-search filter
   that include the feed-title string, producing not-meaningful
   results.
-* Reference (TODO)
+* Reference
+** Score org file structure
+
+Use the captures to ensure all fields are populated.
+
+See an example:
+
+#+begin_src text
+  ,*** air show
+  :PROPERTIES:
+  :SECTION:  title-or-content
+  :CONTENTVALUE:    +400
+  :STRINGTYPE:     s
+  :TITLEVALUE: 300
+  :END:   
+#+end_src
+
+where each property name can be customized with the following variables:
+
+- ~elfeed-score-org-value-property~
+- ~elfeed-score-org-titlevalue-property~
+- ~elfeed-score-org-contentvalue-property~
+- ~elfeed-score-org-string-type-property~
+- ~elfeed-score-org-attr-property~
+- ~elfeed-score-org-tags-property~
+- ~elfeed-score-org-feeds-property~
+- ~elfeed-score-org-text-property~

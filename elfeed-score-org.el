@@ -23,15 +23,16 @@
 
 ;;; Code:
 
-;;;; Get data from file
+;;;; Input/Output data variables
+(defvar elfeed-score-org-output-file
+  (expand-file-name "~/org/areas/emacs/elfeed.score")
+  "Output file with scores, format elfeed-score.")
 
 (defvar elfeed-score-org-input-file
-  (expand-file-name "~/org/projects/elfeed-score-org/scores.org")
+  (expand-file-name "~/org/areas/news/scores.org")
   "Elfeed scores org file.")
-;; TODO move to configuraiton suggestion
-(defvar elfeed-score-org-input-file-TEST
-  "~/org/projects/elfeed-score-org/test-scores.org"
-  "Org file with scores.")
+
+;;;; Get data from file
 
 (defvar elfeed-score-org-rule-type-property (intern ":SECTION")
   "Name of the property that identifies the type of rule.
@@ -55,62 +56,6 @@ Each type of rule has its own sublist in the score file.")
     tag (:section :text :value)
     link (:section :text :value :type :feeds))
   "Plist with sections, and related variables to capture.")
-
-(defun elfeed-score-org-parse-headline (hl)
-  "Return `entry' plist with all properties from org headline HL."
-  (let* ((section (plist-get (car (cdr hl))
-                             elfeed-score-org-rule-type-property))
-         (expected-vars (elfeed-score-org-variables-by-section section)))
-    (flatten-list
-     (apply
-      #'list
-      (seq-map
-       (lambda (var)
-         (pcase var
-           (:section
-            (list var (plist-get (car (cdr hl))
-                                 elfeed-score-org-rule-type-property)))
-           (:text
-            (list var (plist-get (car (cdr hl))
-                                 elfeed-score-org-text-property)))
-           (:value
-            (list var (plist-get (car (cdr hl))
-                                 elfeed-score-org-value-property)))
-           (:type
-            (list var (plist-get (car (cdr hl))
-                                 elfeed-score-org-string-type-property)))
-           (:title-value
-            (list var (plist-get (car (cdr hl))
-                                 elfeed-score-org-titlevalue-property)))
-           (:content-value
-            (list var (plist-get (car (cdr hl))
-                                 elfeed-score-org-contentvalue-property)))
-           (:attr
-            (list var (if-let (val (plist-get (car (cdr hl))
-                                              elfeed-score-org-attr-property)) val "t")))
-           (:feeds
-            (list var (plist-get (car (cdr hl))
-                                 elfeed-score-org-feeds-property)))
-           (:tags
-            (list var (if-let (val (plist-get (car (cdr hl))
-                                              elfeed-score-org-tags-property)) val "")))))
-       expected-vars)))))
-
-(defun elfeed-score-org-parse-input (filename)
-  "Parse org FILENAME and return list of entries.
-Entry is a plist (:section section :text text etc.)"
-  (let* ((entries nil)
-         (filter
-          (lambda (h)
-            (if (org-element-property
-                 elfeed-score-org-rule-type-property h) h nil)))
-         (ast (with-temp-buffer
-                (insert-file-contents filename)
-                (org-element-parse-buffer)))
-         (headlines (org-element-map ast 'headline filter)))
-    (seq-map (lambda (hl) (push (elfeed-score-org-parse-headline hl) entries))
-             headlines)
-    (reverse entries)))
 
 (defun elfeed-score-org-filter-entries (entries section)
   "Given SECTION, return entries of that type from list ENTRIES."
@@ -151,10 +96,10 @@ its section type."
 (defun elfeed-score-org-format-tags-scoping (section tag-value)
   "Given TAG-VALUE, the raw string parsed, return formatted string.
 Result is different based on SECTION."
-  (if (or (not val) (equal val "")) ""
+  (if (or (not tag-value) (equal tag-value "")) ""
     (apply #'concat
            (list ":tags ("
-                 (apply #'concat (let ((tags (split-string val " ")))
+                 (apply #'concat (let ((tags (split-string tag-value " ")))
                    (seq-map (lambda (tag) (format "%s " tag)) tags)))
                  ")"))))
                
@@ -187,9 +132,7 @@ the flag."
                    (seq-map
                     (lambda (var)
                       (format "%s" (elfeed-score-org-format-variable-value
-                                    entry var)))
-                    variables))
-            ")")))
+                                    entry var))) variables)) ")")))
 
 (defun elfeed-score-org-create-lines (entries section)
   "Create lines (strings) for score file SECTION.
@@ -201,6 +144,66 @@ You can pass all INFOS, and they will be filtered for SECTION."
       (push (elfeed-score-org-create-line entry section) lines))
     (push "  )" lines)
     (reverse lines)))
+
+(defun elfeed-score-org-parse-headline (hl)
+  "Return `entry' plist with all properties from org headline HL."
+  (let* ((section (plist-get (car (cdr hl))
+                             elfeed-score-org-rule-type-property))
+         (expected-vars (elfeed-score-org-variables-by-section section)))
+    (flatten-list
+     (apply
+      #'list
+      (seq-map
+       (lambda (var)
+         (pcase var
+           (:section
+            (list var (plist-get (car (cdr hl))
+                                 elfeed-score-org-rule-type-property)))
+           (:text
+            (list var (plist-get (car (cdr hl))
+                                 elfeed-score-org-text-property)))
+           (:value
+            (list var (plist-get (car (cdr hl))
+                                 elfeed-score-org-value-property)))
+           (:type
+            (list var (plist-get (car (cdr hl))
+                                 elfeed-score-org-string-type-property)))
+           (:title-value
+            (list var (plist-get (car (cdr hl))
+                                 elfeed-score-org-titlevalue-property)))
+           (:content-value
+            (list var (plist-get (car (cdr hl))
+                                 elfeed-score-org-contentvalue-property)))
+           (:attr
+            (list var (if-let
+                          (val (plist-get (car (cdr hl))
+                                          elfeed-score-org-attr-property))
+                          val "t")))
+           (:feeds
+            (list var (plist-get (car (cdr hl))
+                                 elfeed-score-org-feeds-property)))
+           (:tags
+            (list var (if-let
+                          (val (plist-get (car (cdr hl))
+                                          elfeed-score-org-tags-property))
+                          val "")))))
+       expected-vars)))))
+
+(defun elfeed-score-org-parse-input (filename)
+  "Parse org FILENAME and return list of entries.
+Entry is a plist (:section section :text text etc.)"
+  (let* ((entries nil)
+         (filter
+          (lambda (h)
+            (if (org-element-property
+                 elfeed-score-org-rule-type-property h) h nil)))
+         (ast (with-temp-buffer
+                (insert-file-contents filename)
+                (org-element-parse-buffer)))
+         (headlines (org-element-map ast 'headline filter)))
+    (seq-map (lambda (hl) (push (elfeed-score-org-parse-headline hl) entries))
+             headlines)
+    (reverse entries)))
 
 (defun elfeed-score-org-create-buffer-file (filename)
   "Create temp buffer from FILENAME and write to file."
@@ -225,6 +228,8 @@ You can pass all INFOS, and they will be filtered for SECTION."
           (write-region (point-min)
                         (point-max)
                         elfeed-score-org-output-file))))))
+
+(elfeed-score-org-create-buffer-file elfeed-score-org-input-file)
 
 
 (defun elfeed-score-org-hook ()
@@ -285,11 +290,6 @@ and setup org-capture templates for score entry."
         (setq org-capture-templates
               (append org-capture-templates entry-template)))))
 
-;;;; Output data
-(defvar elfeed-score-org-output-file
-  (expand-file-name "~/org/areas/emacs/elfeed.score")
-  "Output file with scores, format elfeed-score.")
-
 
 ;; (bind-key "C-c C-j" #'elfeed-score-org-run 'emacs-lisp-mode-map)
-(elfeed-score-org-setup)
+

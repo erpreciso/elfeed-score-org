@@ -5,6 +5,7 @@
 
 (defun elfeed-score-org--fixture-test (body)
   "Initialize temporary file for testing."
+  (load-file "~/org/projects/elfeed-score-org/elfeed-score-org.el")
   (unwind-protect
       (progn 
         (with-temp-file elfeed-score-org--test-file
