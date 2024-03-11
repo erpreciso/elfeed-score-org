@@ -1,4 +1,10 @@
 
+(defun elfeed-score-org-run ()
+  (interactive)
+  (elfeed-score-org-create-buffer-file elfeed-score-org-input-file))
+
+(bind-key "C-c C-j" #'elfeed-score-org-run 'emacs-lisp-mode-map)
+
 (defvar elfeed-score-org--test-file
   (expand-file-name "~/org/temp/test-scores.org")
   "Test file for ert-tests")
