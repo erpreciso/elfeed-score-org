@@ -1,9 +1,34 @@
-;;; GET DATA FROM FILE
+;;; elfeed-score-org.el --- elfeed scores with org  -*- lexical-binding: t; -*-
+
+;; Copyright 2024 Stefano Merlo
+
+;; This program is free software: you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or any later version.
+
+;; This program is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+;; General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program. If not, see
+;; <https://www.gnu.org/licenses/>.
+
+;; Author: Stefano Merlo <trepreciso@gmail.com>
+;; Created: 2024-03-11
+
+;;; Commentary:
+
+;;; Code:
+
+;;;; Get data from file
 
 (defvar elfeed-score-org-input-file
   (expand-file-name "~/org/projects/elfeed-score-org/scores.org")
-  "Org file with scores.")
-
+  "Elfeed scores org file.")
+;; TODO move to configuraiton suggestion
 (defvar elfeed-score-org-input-file-TEST
   "~/org/projects/elfeed-score-org/test-scores.org"
   "Org file with scores.")
@@ -183,9 +208,9 @@ You can pass all INFOS, and they will be filtered for SECTION."
         (sections (elfeed-score-org-plist-keys
                    elfeed-score-org-sections-variables)))
     (save-excursion
-      (with-output-to-temp-buffer "*Result*"
+      (with-output-to-temp-buffer "*Result*" ;;TODO rename
         (goto-char (point-min))
-        (princ ";;; Elfeed score file     -*- lisp -*-\n(\n")
+        (princ ";;; Elfeed score file     -*- lisp -*-\n(\n") ;;TODO add that is auto-generated
         (dolist (section sections)
           (dolist (line (elfeed-score-org-create-lines entries section))
             (princ (format "%s\n" line))))
@@ -204,6 +229,7 @@ You can pass all INFOS, and they will be filtered for SECTION."
 
 (defun elfeed-score-org-hook ()
   "Run elfeed-score-org after saving the score file."
+  ;;TODO change the hook since does not work with org-capture
   (when (string= (buffer-file-name) elfeed-score-org-input-file)
     (elfeed-score-org-create-buffer-file elfeed-score-org-input-file)))
 
@@ -211,7 +237,7 @@ You can pass all INFOS, and they will be filtered for SECTION."
   (interactive)
   (elfeed-score-org-create-buffer-file elfeed-score-org-input-file))
 
-;;; ORG CAPTURE
+;;;; Org capture integration
 (defun elfeed-score-org-capture-template (type)
   (concat "%i* %^{text}\n"
           ":PROPERTIES:\n"
@@ -259,11 +285,12 @@ and setup org-capture templates for score entry."
         (setq org-capture-templates
               (append org-capture-templates entry-template)))))
 
-;;; OUTPUT DATA
-(defvar elfeed-score-org-output-file "~/org/areas/emacs/elfeed.score"
+;;;; Output data
+(defvar elfeed-score-org-output-file
+  (expand-file-name "~/org/areas/emacs/elfeed.score")
   "Output file with scores, format elfeed-score.")
 
-;;; TESTS
+;;;; Tests
 (ert-deftest tags ()
   (should
    (equal
@@ -291,5 +318,5 @@ and setup org-capture templates for score entry."
                '(:section title :text "example text" :value 100 :type s))))
 
 
-(bind-key "C-c C-j" #'elfeed-score-org-run 'emacs-lisp-mode-map)
+;; (bind-key "C-c C-j" #'elfeed-score-org-run 'emacs-lisp-mode-map)
 (elfeed-score-org-setup)
