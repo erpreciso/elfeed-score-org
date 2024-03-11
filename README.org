@@ -1,0 +1,44 @@
+* Explanation
+** Motivation
+- Manage scores using org-mode
+- Summary table processed with org-mode
+- org-capture for new scores 
+* Tutorial (TODO)
+* How-to guide
+** Install
+
+Copy ~elfeed-score-org~ in PATH and add ~(load-file PATH)~ to your emacs
+init file.
+
+** Setup
+
+*** Minimal setup
+
+**** Load module
+
+With PATH as the path where the module has been copied:
+
+#+begin_src emacs-lisp
+  (load-file PATH)
+#+end_src
+
+*** Suggested setup
+
+**** Add scores templates to your capture templates
+
+#+begin_src emacs-lisp
+  (elfeed-score-org-setup)
+#+end_src
+
+** Use
+
+- Enter elfeed-navi
+- Generate the feed list using `g'
+- Navigate the list of feed titles using `n' and `p'
+- Hit `RET' to enter elfeed and display the buffer `*elfeed-search*'
+  filtered by the feed title selected
+- When returning to elfeed-navi, regenerate the summary using `G';
+  regenerating using `g' would take the current elfeed-search filter
+  that include the feed-title string, producing not-meaningful
+  results.
+* Reference (TODO)
