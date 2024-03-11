@@ -34,7 +34,9 @@ With PATH as the path where the module has been copied:
 
 *** Suggested setup
 
-**** Add scores templates to your capture templates
+- Add scores templates to your capture templates
+- Add hooks after saving the scores file (e.g. insert manual entry)
+  and after capturing a score.
 
 #+begin_src emacs-lisp
   (elfeed-score-org-setup)

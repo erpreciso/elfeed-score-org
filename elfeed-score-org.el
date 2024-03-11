@@ -236,11 +236,14 @@ Entry is a plist (:section section :text text etc.)"
 
 ;;;;; hook
 
-(defun elfeed-score-org-hook ()
+(defun elfeed-score-org-after-save-hook ()
   "Run elfeed-score-org after saving the score file."
-  ;;TODO change the hook since does not work with org-capture
   (when (string= (buffer-file-name) elfeed-score-org-input-file)
     (elfeed-score-org-create-buffer-file elfeed-score-org-input-file)))
+
+(defun elfeed-score-org-after-capture-hook ()
+  "Run elfeed-score-org after a score entry capture."
+    (elfeed-score-org-create-buffer-file elfeed-score-org-input-file))
 
 ;;;;; Org capture integration
 
@@ -259,7 +262,8 @@ Entry is a plist (:section section :text text etc.)"
 (defun elfeed-score-org-setup ()
   "Add hook to generate score file when saving the score file,
 and setup org-capture templates for score entry."
-  (add-hook 'after-save-hook 'elfeed-score-org-hook)
+  (add-hook 'after-save-hook 'elfeed-score-org-after-save-hook)
+  (add-hook 'org-capture-after-finalize-hook 'elfeed-score-org-after-capture-hook)
   (let ((group-template '("s" "Score file entry"))
         (entry-template
          '(("sf" "Score feed" entry
@@ -289,4 +293,3 @@ and setup org-capture templates for score entry."
     (if (not (member entry-template org-capture-templates))
         (setq org-capture-templates
               (append org-capture-templates entry-template)))))
-
