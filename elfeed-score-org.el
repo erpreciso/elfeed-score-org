@@ -263,30 +263,34 @@ Entry is a plist (:section section :text text etc.)"
   "Add hook to generate score file when saving the score file,
 and setup org-capture templates for score entry."
   (add-hook 'after-save-hook 'elfeed-score-org-after-save-hook)
-  (add-hook 'org-capture-after-finalize-hook 'elfeed-score-org-after-capture-hook)
   (let ((group-template '("s" "Score file entry"))
         (entry-template
          '(("sf" "Score feed" entry
             (file elfeed-score-org-input-file)
             (function (lambda ()
-                        (elfeed-score-org-capture-template 'feed))))
+                        (elfeed-score-org-capture-template 'feed)))
+            :after-finalize elfeed-score-org-after-capture-hook)
            ("st" "Score title" entry
             (file elfeed-score-org-input-file)
             (function (lambda ()
-                        (elfeed-score-org-capture-template 'title))))
+                        (elfeed-score-org-capture-template 'title)))
+            :after-finalize elfeed-score-org-after-capture-hook)
            ("sc" "Score title-or-content" entry
             (file elfeed-score-org-input-file)
             (function (lambda ()
                         (elfeed-score-org-capture-template
-                         'title-or-content))))
+                         'title-or-content)))
+            :after-finalize elfeed-score-org-after-capture-hook)
            ("sl" "Score link" entry
             (file elfeed-score-org-input-file)
             (function (lambda ()
-                        (elfeed-score-org-capture-template 'link))))
+                        (elfeed-score-org-capture-template 'link)))
+            :after-finalize elfeed-score-org-after-capture-hook)
            ("st" "Score tag" entry
             (file elfeed-score-org-input-file)
             (function (lambda ()
-                        (elfeed-score-org-capture-template 'tag)))))))
+                        (elfeed-score-org-capture-template 'tag)))
+            :after-finalize elfeed-score-org-after-capture-hook))))
     (if (not (member group-template org-capture-templates))
         (setq org-capture-templates
               (append org-capture-templates (list group-template))))
