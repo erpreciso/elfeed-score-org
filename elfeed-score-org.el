@@ -199,6 +199,7 @@ Entry is a plist (:section section :text text etc.)"
                  elfeed-score-org-rule-type-property h) h nil)))
          (ast (with-temp-buffer
                 (insert-file-contents filename)
+                (org-mode)
                 (org-element-parse-buffer)))
          (headlines (org-element-map ast 'headline filter)))
     (seq-map (lambda (hl) (push (elfeed-score-org-parse-headline hl) entries))
